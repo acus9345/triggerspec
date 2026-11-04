@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: ${{ matrix.os }} / Node ${{ matrix.node }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        node: [18, 20, 22]
+        include:
+          # Trimmed matrix for the case-insensitive platforms.
+          - os: windows-latest
+            node: 20
+          - os: windows-latest
+            node: 22
+          - os: macos-latest
+            node: 22
+    steps:
+      # Windows runners already default to core.autocrlf=true, like Git for Windows on a
+      # developer machine. Set it explicitly so the checkout really has CRLF working-tree
+      # files and the tests run the way Windows users run them.
+      - name: Use Git for Windows line endings (core.autocrlf=true)
+        if: runner.os == 'Windows'
+        run: git config --global core.autocrlf true
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+      - name: Smoke-test the packed CLI
+        shell: bash
+        run: |
+          npm pack
+          TARBALL="$(ls "$GITHUB_WORKSPACE"/triggerspec-*.tgz)"
+          mkdir -p "$RUNNER_TEMP/smoke" && cd "$RUNNER_TEMP/smoke"
+          npm init -y >/dev/null
+          npm install "$TARBALL"
+          npx triggerspec --version
+          npx triggerspec lint "$GITHUB_WORKSPACE/examples/good" --fail-on warning
+          npx triggerspec test "$GITHUB_WORKSPACE/examples/good"
+          npx triggerspec collisions "$GITHUB_WORKSPACE/examples/good"
+          if npx triggerspec lint "$GITHUB_WORKSPACE/examples/broken"; then
+            echo "lint should fail on examples/broken" >&2
+            exit 1
+          fi

@@ -1,0 +1,12 @@
+# Trigger tests for `triggerspec test`. Prompts are routed against every skill in the folder.
+should_trigger:
+  - Fill out this PDF form with my address and phone number
+  - Can you complete the tax form PDF I attached?
+  - prompt: populate the application PDF fields from this JSON
+    top: 1
+should_not_trigger:
+  - Merge these two Word documents
+  - prompt: Write release notes for version 2.3 from the merged pull requests
+    expect: release-notes
+  - prompt: What's the weather in Singapore tomorrow?
+    expect: none

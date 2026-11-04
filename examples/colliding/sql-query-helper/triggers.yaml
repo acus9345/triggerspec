@@ -1,0 +1,3 @@
+should_trigger:
+  - Why is this PostgreSQL query slow? Here is the query plan
+  - write a SQL query joining orders and customers

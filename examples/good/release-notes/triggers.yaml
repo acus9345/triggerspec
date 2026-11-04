@@ -1,0 +1,5 @@
+should_trigger:
+  - Write release notes for version 2.3 from the merged pull requests
+  - update the CHANGELOG with this week's fixes
+should_not_trigger:
+  - Fill out this PDF form

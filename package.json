@@ -1,0 +1,60 @@
+{
+  "name": "triggerspec",
+  "version": "0.1.0",
+  "description": "Offline trigger tests, routing regression diffs, description-collision reports and deep lint for Agent Skills (SKILL.md).",
+  "keywords": [
+    "agent-skills",
+    "skill.md",
+    "claude",
+    "claude-code",
+    "skills",
+    "lint",
+    "validator",
+    "trigger",
+    "routing",
+    "bm25",
+    "test-runner"
+  ],
+  "license": "MIT",
+  "author": "acus9345",
+  "type": "module",
+  "bin": {
+    "triggerspec": "dist/cli.js"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\" && tsc -p tsconfig.build.json && node scripts/postbuild.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint .",
+    "pretest": "npm run build",
+    "test": "vitest run",
+    "prepack": "npm run build"
+  },
+  "dependencies": {
+    "yaml": "^2.9.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "@types/node": "^18.19.130",
+    "eslint": "^9.39.5",
+    "typescript": "~5.6",
+    "typescript-eslint": "^8.72.1",
+    "vitest": "^3.2.7"
+  }
+}

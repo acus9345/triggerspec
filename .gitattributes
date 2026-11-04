@@ -1,0 +1,2 @@
+# keep the CRLF fixture byte-exact on every platform
+examples/broken/** -text

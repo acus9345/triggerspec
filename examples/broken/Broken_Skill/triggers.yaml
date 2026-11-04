@@ -1,0 +1,4 @@
+should_trigger:
+  - convert my stuff
+should_not_triggr:
+  - something else
