@@ -1,4 +1,4 @@
-import { chmodSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import * as path from 'node:path';
 import { afterAll } from 'vitest';
@@ -80,7 +80,8 @@ export function caseInsensitiveFs(): FsLike {
       } catch {
         return null;
       }
-      const hit = names.find((n) => n === seg) ?? names.find((n) => n.toLowerCase() === seg.toLowerCase());
+      // Windows 8.3 short names (RUNNER~1 in the runner's TEMP) are not listed by readdir; take them as-is.
+      const hit = names.find((n) => n === seg) ?? names.find((n) => n.toLowerCase() === seg.toLowerCase()) ?? (/~\d/.test(seg) && existsSync(path.join(cur, seg)) ? seg : undefined);
       if (hit === undefined) return null;
       cur = path.join(cur, hit);
     }

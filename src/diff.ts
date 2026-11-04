@@ -93,7 +93,9 @@ export function checkoutRoutingFiles(dir: string, ref: string): { path: string; 
   const base = ['-c', 'core.fsmonitor=false'];
   const git = (args: string[], cwd = abs) => execFileSync(gitExe, [...base, ...args], { cwd, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, stdio: ['ignore', 'pipe', 'pipe'], shell: false, windowsHide: true });
   const top = git(['rev-parse', '--show-toplevel']).trim();
-  const prefix = path.relative(top, abs).split(path.sep).join('/');
+  // Ask git for the subfolder rather than path.relative(top, abs): `top` is git's spelling, which can
+  // differ from `abs` (Windows 8.3 names like RUNNER~1, letter case), giving a ../.. "outside repository" path.
+  const prefix = git(['rev-parse', '--show-prefix']).trim().replace(/\/$/, '');
   git(['rev-parse', '--verify', '--quiet', `${ref}^{commit}`]);
   const listing = git(['ls-tree', '-r', '-z', '--name-only', ref, '--', prefix || '.'], top);
   const wanted = listing.split('\0').filter((p) => {

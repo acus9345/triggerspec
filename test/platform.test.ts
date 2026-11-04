@@ -92,7 +92,8 @@ describe('H1: case-insensitive filesystems (simulated NTFS/APFS)', () => {
     const dir = swapCase(real.dir);
     const skill = { ...real, dir, file: path.join(dir, 'SKILL.md') };
     expect(ciFs.existsSync(dir)).toBe(true);
-    expect(lintSkill(skill, { execChecks: false, fs: ciFs })).toEqual([]);
+    // An autocrlf (Windows) checkout of examples/ adds the run-wide CRLF info; it has nothing to do with case.
+    expect(lintSkill(skill, { execChecks: false, fs: ciFs }).filter((f) => f.code !== 'crlf-line-endings')).toEqual([]);
   });
 
   it('resolveCase: exact / case (with on-disk name) / missing / outside root / NFC vs NFD', () => {
