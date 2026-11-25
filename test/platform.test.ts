@@ -208,6 +208,19 @@ describe('M1: skills behind symlinks / junctions are discovered', () => {
     expect(byCode(f, 'reference-outside-skill').map((x) => x.message).join('\n')).toMatch(/through a symlink\/junction/);
     expect(codes(f)).not.toContain('orphan-file');
   });
+
+  it('a symlinked file pointing outside the skill is skipped as link-outside-skill (not parsed or flagged as orphan)', () => {
+    const shared = writeTree(tmp(), { 'secret.py': 'def broken(:\n' });
+    const dir = makeSkill('s', { 'SKILL.md': skillMd({ name: 's', description: GOOD_DESC }, 'Body.') });
+    mkdirSync(path.join(dir, 'scripts'), { recursive: true });
+    try {
+      symlinkSync(path.join(shared, 'secret.py'), path.join(dir, 'scripts', 'secret.py'), 'file');
+    } catch {
+      return; // Creating file symlinks on Windows without Developer Mode / elevation fails with EPERM.
+    }
+    const f = lintSkill(load(dir), { execChecks: true });
+    expect(codes(f)).toEqual(['link-outside-skill']);
+  });
 });
 
 describe('M2 / L1: diff and test honour per-file threshold', () => {

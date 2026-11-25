@@ -33,6 +33,8 @@ describe('trigger test files', () => {
   const bad: [string, string, RegExp][] = [
     ['unknown top-level key', 'should_trigger: [a]\nshould_not: [b]\n', /unknown top-level key "should_not"/],
     ['threshold out of range', 'threshold: 2\nshould_trigger: [a]\n', /threshold/],
+    ['threshold NaN', 'threshold: .nan\nshould_trigger: [a]\n', /threshold/],
+    ['threshold Infinity', 'threshold: .inf\nshould_trigger: [a]\n', /threshold/],
     ['not a list', 'should_trigger: a\n', /must be a list/],
     ['empty prompt', 'should_trigger: [""]\n', /empty prompt/],
     ['bad top', 'should_trigger:\n  - {prompt: a, top: 0}\n', /positive integer/],

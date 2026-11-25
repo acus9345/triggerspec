@@ -145,7 +145,7 @@ function lintPaths(paths: string[], p: Parsed): { findings: Finding[]; dirs: str
       onIssue: (is) => findings.push({ code: 'path-skipped', severity: 'info', message: `${is.path}: ${is.reason}; not searched for skills.`, skillDir: path.resolve(expandHome(input)) }),
     });
     if (found.length === 0) {
-      findings.push({ code: 'no-skills-found', severity: 'error', message: `No SKILL.md found under ${input}.`, skillDir: path.resolve(input) });
+      findings.push({ code: 'no-skills-found', severity: 'error', message: `No SKILL.md found under ${input}.`, skillDir: path.resolve(expandHome(input)) });
       continue;
     }
     for (const sf of found) {
@@ -280,7 +280,7 @@ export async function run(argv: string[], io: Io): Promise<number> {
           const head = loadCatalog(target, catalogs);
           const base = loadCatalog(basePath, catalogs);
           const promptsFile = one(p, 'prompts');
-          const prompts = promptsFile ? readFileSync(expandHome(promptsFile), 'utf8').split(/\r?\n/).filter((l) => l.trim() && !l.startsWith('#')) : [];
+          const prompts = promptsFile ? readFileSync(expandHome(promptsFile), 'utf8').replace(/^\uFEFF/, '').split(/\r?\n/).filter((l) => l.trim() && !l.startsWith('#')) : [];
           const d = await diffCatalogs(base, head, { threshold: num(p, 'threshold', 0, 1), prompts });
           const code = d.regressions.length > 0 ? 1 : 0;
           if (json) emit({ ok: code === 0, ...d });

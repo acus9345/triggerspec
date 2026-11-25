@@ -188,9 +188,10 @@ describe('cli: diff', () => {
     git('commit', '-q', '-m', 'one');
     writeFileSync(path.join(repo, 'pdf', 'SKILL.md'), skillMd({ name: 'pdf', description: 'Fill PDF forms and merge PDF files. Use when filling a PDF form.' }));
     const prompts = path.join(tmp(), 'prompts.txt');
-    writeFileSync(prompts, '# comment\nmerge two PDF files\n');
+    writeFileSync(prompts, '\uFEFF# comment\nmerge two PDF files\n');
     const r = await json(['diff', repo, '--base-ref', 'HEAD', '--prompts', prompts]);
     expect(r.code).toBe(0);
+    expect(r.data.prompts).toBe(2);
     expect(r.data.descriptionChanged).toEqual(['pdf']);
     expect(r.data.changes).toEqual([{ prompt: 'merge two PDF files', owner: null, before: null, after: 'pdf' }]);
     const bad = await cli(['diff', repo, '--base-ref', 'nope-ref']);

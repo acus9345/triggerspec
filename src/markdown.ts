@@ -79,7 +79,7 @@ export function extractLinks(md: string, firstLine = 1): MdLink[] {
   for (const l of scanLines(md, firstLine)) {
     if (l.inCode) continue;
     const text = stripInlineCode(l.text);
-    const def = /^ {0,3}\[([^\]]+)\]:\s*(\S+)/.exec(text);
+    const def = /^ {0,3}\[([^\]]+)\]:\s*(<[^>]*>|\S+)/.exec(text);
     if (def && !/^\^/.test(def[1] ?? '')) {
       out.push({ target: cleanTarget(def[2] ?? ''), line: l.line, kind: 'reference-definition' });
       continue;
@@ -161,7 +161,10 @@ export function headingSlugs(md: string): Set<string> {
     }
   }
   // Explicit HTML anchors: <a id="x"> / <a name="x">
-  for (const m of md.matchAll(/<a\s+(?:[^>]*\s)?(?:id|name)=["']([^"']+)["']/gi)) slugs.add(m[1]!);
+  for (const m of md.matchAll(/<a\s+(?:[^>]*\s)?(?:id|name)=["']([^"']+)["']/gi)) {
+    slugs.add(m[1]!);
+    slugs.add(m[1]!.toLowerCase());
+  }
   return slugs;
 }
 

@@ -1,12 +1,13 @@
 import { execFileSync } from 'node:child_process';
 import { findGit } from './exe.js';
-import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, realpathSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import * as path from 'node:path';
 import { routableSkills, type Catalog } from './catalog.js';
 import { Bm25Index, DEFAULT_THRESHOLD } from './scorer.js';
 import { runTriggerTests, type CaseResult } from './tester.js';
 import { TEST_FILE_NAMES } from './testfile.js';
+import { expandHome } from './util.js';
 
 export interface RouteChange {
   prompt: string;
@@ -86,12 +87,14 @@ export async function diffCatalogs(base: Catalog, head: Catalog, opts: { thresho
  */
 export function checkoutRoutingFiles(dir: string, ref: string): { path: string; cleanup: () => void } {
   if (ref.startsWith('-') || /[\0\s]/.test(ref)) throw new Error(`invalid git ref "${ref}"`);
-  const abs = realpathSync(path.resolve(dir));
+  const abs = realpathSync.native(path.resolve(expandHome(dir)));
+  const isFile = statSync(abs).isFile();
+  const cwdDir = isFile ? path.dirname(abs) : abs;
   // Never let the OS resolve a bare "git": on Windows that searches the (untrusted) repo first.
-  const gitExe = findGit(undefined, [abs]);
+  const gitExe = findGit(undefined, [cwdDir]);
   if (!gitExe) throw new Error('git was not found on PATH (relative PATH entries and the repository itself are not searched)');
   const base = ['-c', 'core.fsmonitor=false'];
-  const git = (args: string[], cwd = abs) => execFileSync(gitExe, [...base, ...args], { cwd, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, stdio: ['ignore', 'pipe', 'pipe'], shell: false, windowsHide: true });
+  const git = (args: string[], cwd = cwdDir) => execFileSync(gitExe, [...base, ...args], { cwd, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, stdio: ['ignore', 'pipe', 'pipe'], shell: false, windowsHide: true });
   const top = git(['rev-parse', '--show-toplevel']).trim();
   // Ask git for the subfolder rather than path.relative(top, abs): `top` is git's spelling, which can
   // differ from `abs` (Windows 8.3 names like RUNNER~1, letter case), giving a ../.. "outside repository" path.
@@ -105,13 +108,19 @@ export function checkoutRoutingFiles(dir: string, ref: string): { path: string; 
     return TEST_FILE_NAMES.some((n) => p === n || p.endsWith('/' + n));
   });
   const tmp = mkdtempSync(path.join(tmpdir(), 'triggerspec-base-'));
-  for (const p of wanted) {
-    const content = execFileSync(gitExe, [...base, 'show', `${ref}:${p}`], { cwd: top, maxBuffer: 64 * 1024 * 1024, shell: false, windowsHide: true });
-    const out = path.join(tmp, ...p.split('/'));
-    mkdirSync(path.dirname(out), { recursive: true });
-    writeFileSync(out, content);
+  try {
+    for (const p of wanted) {
+      const content = execFileSync(gitExe, [...base, 'show', `${ref}:${p}`], { cwd: top, maxBuffer: 64 * 1024 * 1024, shell: false, windowsHide: true });
+      const out = path.join(tmp, ...p.split('/'));
+      mkdirSync(path.dirname(out), { recursive: true });
+      writeFileSync(out, content);
+    }
+    const target = path.join(tmp, ...(prefix ? prefix.split('/') : []));
+    mkdirSync(target, { recursive: true });
+    const outPath = isFile && existsSync(path.join(target, path.basename(abs))) ? path.join(target, path.basename(abs)) : target;
+    return { path: outPath, cleanup: () => rmSync(tmp, { recursive: true, force: true }) };
+  } catch (e) {
+    rmSync(tmp, { recursive: true, force: true });
+    throw e;
   }
-  const target = path.join(tmp, ...(prefix ? prefix.split('/') : []));
-  mkdirSync(target, { recursive: true });
-  return { path: target, cleanup: () => rmSync(tmp, { recursive: true, force: true }) };
 }

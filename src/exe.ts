@@ -1,6 +1,7 @@
-import { accessSync, constants, realpathSync, statSync } from 'node:fs';
+import { accessSync, constants, lstatSync, readlinkSync, realpathSync, statSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import * as path from 'node:path';
+import { errCode } from './fsx.js';
 
 /**
  * Trusted executable lookup.
@@ -35,7 +36,24 @@ function defaultIsExecutable(p: string): boolean {
     if (!statSync(p).isFile()) return false;
     if (process.platform !== 'win32') accessSync(p, constants.X_OK);
     return true;
-  } catch {
+  } catch (e) {
+    // Windows App Execution Aliases (e.g. %LOCALAPPDATA%\Microsoft\WindowsApps\python3.exe)
+    // are IO_REPARSE_TAG_APPEXECLINK reparse points: statSync throws EACCES because the target
+    // inside Program Files\WindowsApps is ACL-protected, while lstatSync + accessSync succeed.
+    if (process.platform === 'win32' && errCode(e) === 'EACCES') {
+      try {
+        if (!lstatSync(p).isSymbolicLink()) return false;
+        accessSync(p, constants.X_OK);
+        try {
+          if (/[\\/]$/.test(readlinkSync(p))) return false;
+        } catch {
+          /* ignore */
+        }
+        return true;
+      } catch {
+        return false;
+      }
+    }
     return false;
   }
 }
@@ -44,6 +62,13 @@ function defaultRealpath(p: string): string {
   try {
     return realpathSync.native(p);
   } catch {
+    if (process.platform === 'win32') {
+      try {
+        return path.resolve(path.dirname(p), readlinkSync(p));
+      } catch {
+        /* fall through */
+      }
+    }
     return p;
   }
 }

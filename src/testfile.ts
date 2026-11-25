@@ -52,7 +52,7 @@ export function parseTestFile(file: string, content?: string): TriggerSpec {
   const raw = normalizeNewlines((content ?? readFileSync(file, 'utf8')).replace(/^\uFEFF/, ''));
   let data: unknown;
   try {
-    data = file.endsWith('.json') ? JSON.parse(raw) : parseYaml(raw, { uniqueKeys: true });
+    data = file.toLowerCase().endsWith('.json') ? JSON.parse(raw) : parseYaml(raw, { uniqueKeys: true });
   } catch (e) {
     throw new TestFileError(`cannot parse: ${(e as Error).message.split('\n')[0]}`, file);
   }
@@ -96,7 +96,7 @@ export function parseTestFile(file: string, content?: string): TriggerSpec {
     const allowed = new Set(['threshold', 'should_trigger', 'should_not_trigger']);
     for (const k of Object.keys(data)) if (!allowed.has(k)) throw new TestFileError(`unknown top-level key "${k}" (allowed: ${[...allowed].join(', ')})`, file);
     if (data.threshold !== undefined) {
-      if (typeof data.threshold !== 'number' || data.threshold < 0 || data.threshold > 1) throw new TestFileError('"threshold" must be a number between 0 and 1', file);
+      if (typeof data.threshold !== 'number' || !Number.isFinite(data.threshold) || data.threshold < 0 || data.threshold > 1) throw new TestFileError('"threshold" must be a number between 0 and 1', file);
       threshold = data.threshold;
     }
     for (const [key, flag] of [['should_trigger', true], ['should_not_trigger', false]] as const) {

@@ -77,6 +77,20 @@ describe.skipIf(!hasGit)('checkoutRoutingFiles (git)', () => {
       co.cleanup();
     }
     expect(existsSync(co.path)).toBe(false);
+
+    // Single SKILL.md path works both for an existing skill and a newly added one.
+    const coSingle = checkoutRoutingFiles(path.join(repo, 'skills/pdf-forms/SKILL.md'), 'HEAD~1');
+    try {
+      expect(loadCatalog(coSingle.path).skills).toHaveLength(1);
+    } finally {
+      coSingle.cleanup();
+    }
+    const coAdded = checkoutRoutingFiles(path.join(repo, 'skills/form-wizard/SKILL.md'), 'HEAD~1');
+    try {
+      expect(loadCatalog(coAdded.path).skills).toHaveLength(0);
+    } finally {
+      coAdded.cleanup();
+    }
   });
 
   it('throws for an unknown ref', () => {

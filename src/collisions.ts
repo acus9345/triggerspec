@@ -75,7 +75,7 @@ export function findCollisions(catalog: Catalog, opts: CollisionOptions = {}): C
   const pool = routableSkills([...catalog.skills, ...catalog.extra]);
   const vecs = vectors(pool);
   const index = new Bm25Index(pool);
-  const primary = new Set(routableSkills(catalog.skills).map((s) => s.name));
+  const primary = new Set(routableSkills(catalog.skills).map((s) => s.id ?? s.name));
 
   // Cross-routing evidence from trigger tests of the skills under test.
   const stolen: CollisionPair['stolen'] = [];
@@ -102,7 +102,7 @@ export function findCollisions(catalog: Catalog, opts: CollisionOptions = {}): C
       const A = pool[i]!;
       const B = pool[j]!;
       if (A.name === B.name) continue; // duplicate names are a lint error, not a collision
-      if (!primary.has(A.name) && !primary.has(B.name)) continue; // both from --catalog: not ours to report
+      if (!primary.has(A.id ?? A.name) && !primary.has(B.id ?? B.name)) continue; // both from --catalog: not ours to report
       const va = vecs[i]!;
       const vb = vecs[j]!;
       const sim = cosine(va, vb);

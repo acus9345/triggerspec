@@ -33,7 +33,7 @@ export function parseJudgeAnswer(text: string, skills: RoutableSkill[]): string 
   if (m) {
     try {
       const obj = JSON.parse(m[0]) as { skill?: unknown };
-      if (obj.skill === null || obj.skill === undefined || obj.skill === 'none') return null;
+      if ('skill' in obj && (obj.skill === null || obj.skill === undefined || obj.skill === 'none')) return null;
       if (typeof obj.skill === 'string' && names.has(obj.skill.trim())) return obj.skill.trim();
     } catch {
       /* fall through */

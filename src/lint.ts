@@ -332,7 +332,14 @@ export function walkSkillFiles(dir: string, fs: FsLike = nodeFsLike): SkillFileW
         // A folder whose real path differs from its lexical path is reached through a link.
         if (real !== null && real !== path.join(visited.real(d) ?? d, name)) deferred.push(job);
         else walk(job);
-      } else if (cst.isFile()) files.push(r);
+      } else if (cst.isFile()) {
+        const real = visited.real(abs);
+        if (realRoot !== null && real !== null && !isWithin(realRoot, real)) {
+          issues.push({ path: r, reason: 'linked file points outside the skill', kind: 'outside' });
+          continue;
+        }
+        files.push(r);
+      }
     }
   };
   let rootSt;
@@ -397,7 +404,7 @@ export function referenceRules(skill: ParsedSkill, fs: FsLike = nodeFsLike): Ref
   const slugCache = new Map<string, Set<string>>();
   const corpus: string[] = [skill.text];
   for (const is of walked.issues) {
-    if (is.kind === 'outside') findings.push(f('link-outside-skill', 'info', `${is.path} is a symlink/junction to a folder outside the skill; it is not scanned and will be missing when the skill is copied or installed on its own.`, path.join(root, is.path), undefined, root));
+    if (is.kind === 'outside') findings.push(f('link-outside-skill', 'info', `${is.path}: ${is.reason}; it is not scanned and will be missing when the skill is copied or installed on its own.`, path.join(root, is.path), undefined, root));
     else findings.push(f('path-skipped', 'info', `${is.path}: ${is.reason}; not scanned.`, path.join(root, is.path), undefined, root));
   }
   // Links can leave the skill through a symlink/junction while the path stays lexically inside.

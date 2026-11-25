@@ -65,6 +65,8 @@ describe('parseJudgeAnswer', () => {
     expect(parseJudgeAnswer('"pdf-forms"', skills)).toBe('pdf-forms');
     expect(parseJudgeAnswer('none', skills)).toBeNull();
     expect(() => parseJudgeAnswer('{"skill": "made-up"}', skills)).toThrow(/could not parse/);
+    expect(() => parseJudgeAnswer('{"answer": "pdf-forms"}', skills)).toThrow(/could not parse/);
+    expect(() => parseJudgeAnswer('{}', skills)).toThrow(/could not parse/);
   });
 
   it('builds a prompt listing every skill', () => {

@@ -35,6 +35,13 @@ describe('links', () => {
     expect(byCode(f, 'broken-anchor')).toHaveLength(2);
   });
 
+  it('matches mixed-case HTML anchor ids and angle-bracket reference definitions with spaces', () => {
+    const f = withBody('s', '[auth](#AuthFlow) and [doc][d]\n\n<a id="AuthFlow"></a>\n\n[d]: <references/a b.md>\n', {
+      'references/a b.md': '# A B\n',
+    });
+    expect(f).toEqual([]);
+  });
+
   it('decodes percent-encoded anchors and unicode headings', () => {
     const f = withBody('s', '[a](#%C3%BCber-uns) [b](#日本語の見出し)\n\n## Über uns\n\n## 日本語の見出し\n');
     expect(f).toEqual([]);
@@ -160,11 +167,12 @@ describe('orphans and reachability', () => {
 
 describe('extractLinks', () => {
   it('handles <angle> targets, titles, images and nested brackets', () => {
-    const links = extractLinks('[a](<references/a b.md>) ![i](assets/x.png "Logo") [[1]](references/c.md)\n\n    [d]: references/d.md\n', 1);
+    const links = extractLinks('[a](<references/a b.md>) ![i](assets/x.png "Logo") [[1]](references/c.md)\n\n    [d]: references/d.md\n  [e]: <references/d e.md>\n', 1);
     expect(links.map((l) => [l.target, l.kind])).toEqual([
       ['references/a b.md', 'inline'],
       ['assets/x.png', 'image'],
       ['references/c.md', 'inline'],
+      ['references/d e.md', 'reference-definition'],
     ]);
   });
 });
