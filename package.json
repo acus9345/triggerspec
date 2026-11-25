@@ -1,6 +1,6 @@
 {
   "name": "triggerspec",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Offline trigger tests, routing regression diffs, description-collision reports and deep lint for Agent Skills (SKILL.md).",
   "keywords": [
     "agent-skills",
